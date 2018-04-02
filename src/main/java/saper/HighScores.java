@@ -6,6 +6,8 @@ package saper;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.prefs.Preferences;
 
@@ -13,7 +15,7 @@ import static saper.Saper.logger;
 
 class HighScores {
     private Preferences prefs;
-    private ArrayList<Integer> scoresList;
+    private TreeSet<Integer> scoresList;
     private int number;
     private static HighScores ourInstance = new HighScores();
     private static final String N_KEY = "scores_number";
@@ -41,28 +43,32 @@ class HighScores {
     private void loadHighScores() {
         logger.debug("Loading High Scores");
         number = prefs.getInt("scores_number", 0);
-        scoresList = new ArrayList<>();
+        scoresList = new TreeSet<>();
         for (int i = 0; i < number; i++) {
-            scoresList.add(i, prefs.getInt(Integer.toString(i), 0));
+            scoresList.add(prefs.getInt(Integer.toString(i), 0));
+            logger.trace("Load: {}", prefs.getInt(Integer.toString(i), 0));
         }
     }
 
     void addScore(int value) {
         logger.debug("Checking if highscore, time: {}", value);
         logger.info("Highscores (number: {}):", number);
-        if (scoresList.isEmpty() || number < LIST_LENGTH || value < scoresList.get(number - 1)) {
-            logger.debug("Highscore!");
+        if (scoresList.isEmpty() || number < LIST_LENGTH || value < scoresList.last()) {
+            logger.info("Highscore!");
 
             scoresList.add(value);
-            scoresList.sort(Comparator.naturalOrder());
 
-            if (scoresList.size() == LIST_LENGTH + 1) {
-                scoresList.remove(LIST_LENGTH);
-                logger.debug("Trimming to {}", LIST_LENGTH);
-            }
             logger.debug("Recording list");
-            for (int i = 0; i < scoresList.size(); i++) {
-                prefs.putInt(Integer.toString(i), scoresList.get(i));
+            Iterator<Integer> iter = scoresList.iterator();
+            for (int i = 0; iter.hasNext(); i++) {
+                int val = iter.next();
+                if (i >= LIST_LENGTH) {
+                    scoresList.remove(val);
+                    logger.debug("Trimming to {}", LIST_LENGTH);
+                } else {
+                    prefs.putInt(Integer.toString(i), val);
+                    logger.trace("Adding: {}", val);
+                }
             }
             number = scoresList.size();
             prefs.putInt(N_KEY, number);
@@ -71,8 +77,10 @@ class HighScores {
             logger.debug("Not a highscore");
         }
 
-        for (int i = 0; i < scoresList.size(); i++) {
-            logger.info("{} : {} {}", i, scoresList.get(i), (scoresList.get(i) == value ? "***" : ""));
+        Iterator<Integer> iter = scoresList.iterator();
+        for (int i = 0; iter.hasNext(); i++) {
+            int val = iter.next();
+            logger.info("{} : {} {}", i, val, (val == value ? "***" : ""));
         }
 
     }
