@@ -4,10 +4,7 @@
 
 package saper;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.prefs.Preferences;
 
@@ -15,7 +12,7 @@ import static saper.Saper.logger;
 
 class HighScores {
     private Preferences prefs;
-    private TreeSet<Integer> scoresList;
+    private ArrayList<Integer> scoresList;
     private int number;
     private static HighScores ourInstance = new HighScores();
     private static final String N_KEY = "scores_number";
@@ -43,7 +40,7 @@ class HighScores {
     private void loadHighScores() {
         logger.debug("Loading High Scores");
         number = prefs.getInt("scores_number", 0);
-        scoresList = new TreeSet<>();
+        scoresList = new ArrayList<>();
         for (int i = 0; i < number; i++) {
             scoresList.add(prefs.getInt(Integer.toString(i), 0));
             logger.trace("Load: {}", prefs.getInt(Integer.toString(i), 0));
@@ -53,17 +50,19 @@ class HighScores {
     void addScore(int value) {
         logger.debug("Checking if highscore, time: {}", value);
         logger.info("Highscores (number: {}):", number);
-        if (scoresList.isEmpty() || number < LIST_LENGTH || value < scoresList.last()) {
+        if (scoresList.isEmpty() || number < LIST_LENGTH || value < scoresList.get(number - 1)) {
             logger.info("Highscore!");
 
-            scoresList.add(value);
+            int insertionPoint = Collections.binarySearch(scoresList, value);
+            if (insertionPoint < 0) insertionPoint = -insertionPoint - 1;
+            logger.debug("InsertionPoint: {}", insertionPoint);
+            scoresList.add(insertionPoint, value);
 
             logger.debug("Recording list");
-            Iterator<Integer> iter = scoresList.iterator();
-            for (int i = 0; iter.hasNext(); i++) {
-                int val = iter.next();
+            for (int i = 0; i <= scoresList.size(); i++) {
+                int val = scoresList.get(i);
                 if (i >= LIST_LENGTH) {
-                    scoresList.remove(val);
+                    scoresList.remove(i);
                     logger.debug("Trimming to {}", LIST_LENGTH);
                 } else {
                     prefs.putInt(Integer.toString(i), val);
