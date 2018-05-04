@@ -55,11 +55,10 @@ class HighScores {
 
             int insertionPoint = Collections.binarySearch(scoresList, value);
             if (insertionPoint < 0) insertionPoint = -insertionPoint - 1;
-            logger.debug("InsertionPoint: {}", insertionPoint);
             scoresList.add(insertionPoint, value);
 
             logger.debug("Recording list");
-            for (int i = 0; i <= scoresList.size(); i++) {
+            for (int i = 0; i <= scoresList.size() - 1; i++) {
                 int val = scoresList.get(i);
                 if (i >= LIST_LENGTH) {
                     scoresList.remove(i);
